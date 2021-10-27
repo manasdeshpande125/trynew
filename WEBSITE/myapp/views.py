@@ -3,7 +3,11 @@ from .models import Blogpost, Info
 from django.http import HttpResponse
 from django.contrib import messages
 from django.shortcuts import redirect
-from django.contrib.auth.models import User
+from django.contrib.auth.models import User,auth
+from django.contrib.auth  import authenticate,  login, logout
+from django.views.decorators.csrf import csrf_exempt
+
+
 
 def index(request):
     #return HttpResponse('Blog page')
@@ -28,8 +32,11 @@ def contact(request):
     return render(request, "index.html")
     #return render(request, 'index.html') 
 def blog(request,id):
+    
     post = Blogpost.objects.filter(post_id = id)[0]
     return render(request,'basic.html',{'post':post})
+    
+        
 
 def index1(request):
     myposts= Blogpost.objects.all()
@@ -39,7 +46,7 @@ def index1(request):
 def blogPost(request, slug): 
     return HttpResponse(f'This is blogPost : {slug}')
 
-
+@csrf_exempt
 def signup(request):
     if request.method=="POST":
         # Get the post parameters
@@ -50,6 +57,27 @@ def signup(request):
         pass1=request.POST['pass1']
         pass2=request.POST['pass2']
 
+        if len(username)<10:
+            messages.error(request, " Your user name must be under 10 characters")
+            return redirect('myapp')
+
+        if not username.isalnum():
+            messages.error(request, " User name should only contain letters and numbers")
+            return redirect('myapp')
+
+        if User.objects.filter(username=username).exists():
+            if (pass1!= pass2):
+                #if User.objects.filter(username=username).exists():
+                messages.error(request, " Passwords do not match")
+                return redirect('myapp')
+        else:
+             messages.error(request, " Username already Exists")
+
+        #myuser = User.objects.create_user(username=username, email=email,fname=fname,lname=lname, pass1=pass1,apss2=pass2)
+        #myuser.first_name= fname
+        #myuser.last_name= lname
+        #myuser.save()
+        #messages.success(request, " Your iCoder has been successfully created")
         # check for errorneous input
         
         # Create the user
@@ -58,7 +86,33 @@ def signup(request):
         myuser.last_name= lname
         myuser.save()
         messages.success(request, " Your iCoder has been successfully created")
-        return redirect('index')
+        return redirect('myapp')
 
     else:
         return HttpResponse("404 - Not found")
+@csrf_exempt
+def handleLogin(request):
+    #return HttpResponse("login")
+
+
+    if request.method=="POST":
+        # Get the post parameters
+        loginusername=request.POST['loginusername']
+        loginpassword=request.POST['loginpassword']
+
+        user=auth.authenticate(username= loginusername, password= loginpassword)
+        if user is not None:
+            auth.login(request, user)
+            messages.success(request, "Successfully Logged In")
+            return redirect('myapp')
+        else:
+            messages.error(request, "Invalid credentials! Please try again")
+            return redirect('myapp')
+
+    return HttpResponse("404- Not found")
+
+def handleLogout(request):
+    #return HttpResponse("logout")
+    logout(request)
+    messages.success(request, "Successfully logged out")
+    return redirect('myapp')

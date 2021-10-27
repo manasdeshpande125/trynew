@@ -9,8 +9,11 @@
     }  </script>
 </head>
 <body onabort="msg()">
+    {% if user.is_authenticated %}
 <h1>This is a sample django template.</h1>
-
+{% else %}
+    Please login to post a comment 
+    {% endif %}
 
 </body>
 </html>
